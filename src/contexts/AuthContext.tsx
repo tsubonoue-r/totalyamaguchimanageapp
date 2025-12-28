@@ -11,6 +11,17 @@ import {
 } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 
+// 開発モード: 認証スキップ
+const DEV_SKIP_AUTH = process.env.NODE_ENV === 'development'
+
+// 開発用モックユーザー
+const mockUser = {
+  uid: 'dev-user-001',
+  email: 'dev@example.com',
+  displayName: '開発ユーザー',
+  emailVerified: true,
+} as User
+
 interface AuthContextType {
   user: User | null
   loading: boolean
@@ -23,10 +34,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(DEV_SKIP_AUTH ? mockUser : null)
+  const [loading, setLoading] = useState(!DEV_SKIP_AUTH)
 
   useEffect(() => {
+    // 開発モードでは認証をスキップ
+    if (DEV_SKIP_AUTH) {
+      setUser(mockUser)
+      setLoading(false)
+      return
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user)
       setLoading(false)
